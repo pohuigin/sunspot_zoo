@@ -77,7 +77,7 @@ class Ranking(object):
                 ims = (b,a)
                 
             p = self.images2pair[ims]
-            return math.copysign(votes_to_cmp(d[p]), sense)
+            return sense * votes_to_cmp(d[p])
 
         from functools import cmp_to_key
         l = list(self.images) #unranked list of images
