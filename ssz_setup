@@ -1,0 +1,8 @@
+;add ssz paths to IDL
+
+add_path,'~/science/projects/sunspot_zoo'
+add_path,'~/science/projects/sunspot_zoo/idl'
+add_path,'~/science/projects/sunspot_zoo/idl/prep'
+add_path,'~/science/projects/sunspot_zoo/idl/analysis'
+
+end
