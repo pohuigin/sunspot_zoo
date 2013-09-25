@@ -1,8 +1,9 @@
-pro smart_fulldisk_alpha, metafile=metafile, fparam=fparam, pathimg=pathimg, pathdata=pathdata, savcutoutpath=savcutoutpath
+pro smart_fulldisk_allclear, metafile=metafile, fparam=fparam, pathimg=pathimg, pathdata=pathdata, savcutoutpath=savcutoutpath, params=inparams
 
 dpathpngs=pathimg
 
-mdiparams=ar_loadparam(fparam=fparam)
+if data_type(inparams) eq 8 then mdiparams=inparams $
+   else mdiparams=ar_loadparam(fparam=fparam)
 
 magdisplay=mdiparams.magthresh
 
