@@ -30,8 +30,8 @@ runvers='ALPHA.1.'+time2file(systim(/utc))
 
 ;Buffer size for AR cutouts
 buffval=-9999.
-xbuff=300
-ybuff=300
+xbuff=410
+ybuff=330
 
 
 
@@ -57,20 +57,20 @@ mdiparams=ar_loadparam(fparam=fparam)
 fits2map,fmdi[0],testmap
 
 ;Initialise CSV file for meta data
-spawn,'echo "#Version: '+strtrim(runvers,2)+'" > '+fcsvzoo
-spawn,'echo "#Sunspot Zoo Cut-out Meta Data" >> '+fcsvzoo
-spawn,'echo "#Each numbered entry corresponds to an AR cut-out image with a filename that includes the number." >> '+fcsvzoo
-spawn,'echo "#DATAID; '+strtrim(testmap.id,2)+'" >> '+fcsvzoo
-spawn,'echo "#MAPDXDY [asec/px]; '+strjoin(strtrim([testmap.dx,testmap.dy],2),',')+'" >> '+fcsvzoo
-spawn,'echo "#B0 [deg]; '+strtrim(testmap.b0,2)+'" >> '+fcsvzoo
-spawn,'echo "#RSUN [asec]; '+strtrim(testmap.rsun,2)+'" >> '+fcsvzoo
-spawn,'echo "#BOXWIDTH [asec]; '+strjoin(strtrim([xbuff,ybuff],2),',')+'" >> '+fcsvzoo
-spawn,'echo "#MAGDISPLAY [G]; '+strtrim(magdisplay,2)+'" >> '+fcsvzoo
-spawn,'echo "#MAGTHRESH [G]; '+strtrim(mdiparams.magthresh,2)+'" >> '+fcsvzoo
-spawn,'echo "#SMOOTHTHRESH [G]; '+strtrim(mdiparams.smooththresh,2)+'" >> '+fcsvzoo
-spawn,'echo "#" >> '+fcsvzoo
-spawn,'echo "#I; I; A; [deg]; [asec]; [px]; A; A; [Mm^2]; F; [Mm^2]; [Mx]; F" >> '+fcsvzoo
-spawn,'echo "#SSZN; NOAA; N_NAR; FILENAME; DATE; HGPOS; HCPOS; PXPOS; HALE; ZURICH; AREA; AREAFRAC; AREATHESH; FLUX; FLUXFRAC" >> '+fcsvzoo
+spawn,'echo "#Version: '+strtrim(runvers,2)+'" > '+fcsvzoo,/sh
+spawn,'echo "#Sunspot Zoo Cut-out Meta Data" >> '+fcsvzoo,/sh
+spawn,'echo "#Each numbered entry corresponds to an AR cut-out image with a filename that includes the number." >> '+fcsvzoo,/sh
+spawn,'echo "#DATAID; '+strtrim(testmap.id,2)+'" >> '+fcsvzoo,/sh
+spawn,'echo "#MAPDXDY [asec/px]; '+strjoin(strtrim([testmap.dx,testmap.dy],2),',')+'" >> '+fcsvzoo,/sh
+spawn,'echo "#B0 [deg]; '+strtrim(testmap.b0,2)+'" >> '+fcsvzoo,/sh
+spawn,'echo "#RSUN [asec]; '+strtrim(testmap.rsun,2)+'" >> '+fcsvzoo,/sh
+spawn,'echo "#BOXWIDTH [asec]; '+strjoin(strtrim([xbuff,ybuff],2),',')+'" >> '+fcsvzoo,/sh
+spawn,'echo "#MAGDISPLAY [G]; '+strtrim(magdisplay,2)+'" >> '+fcsvzoo,/sh
+spawn,'echo "#MAGTHRESH [G]; '+strtrim(mdiparams.magthresh,2)+'" >> '+fcsvzoo,/sh
+spawn,'echo "#SMOOTHTHRESH [G]; '+strtrim(mdiparams.smooththresh,2)+'" >> '+fcsvzoo,/sh
+spawn,'echo "#" >> '+fcsvzoo,/sh
+spawn,'echo "#I; I; A; [deg]; [asec]; [px]; A; A; [Mm^2]; F; [Mm^2]; [Mx]; F" >> '+fcsvzoo,/sh
+spawn,'echo "#SSZN; NOAA; N_NAR; FILENAME; DATE; HGPOS; HCPOS; PXPOS; HALE; ZURICH; AREA; AREAFRAC; AREATHESH; FLUX; FLUXFRAC" >> '+fcsvzoo,/sh
 
 ;Loop through each cut-out fits file
 
@@ -87,8 +87,6 @@ for i=0l,nfile-1l do begin
    fdate=time2file(thismap.time,/date)
    fyyyy=strmid(fdate,0,4)
 
-;stop
-
 ;Buffer the map with noise so that we can expand the FOV
    thismap=map_buffer_2d(thismap,value=buffval,xs=xbuff,ys=ybuff)
 
@@ -99,7 +97,8 @@ for i=0l,nfile-1l do begin
 ;AR detection is being run, but the detection mask is not being used
 ;at the moment... not sure whether to show people everything in the
 ;FOV or only stuff within SMART boundaries...
-   thisarstr=ar_detect(thismap, /doprocess, mapproc=thisproc, params=mdiparams, doplot=doplot, status=status, cosmap=cosmap, limbmask=limbmask)
+
+   thisarstr=ar_detect(thismap, /doprocess, mapproc=thisproc, params=mdiparams, fparam=fparam, doplot=doplot, status=status, cosmap=cosmap, limbmask=limbmask)
 
 
 ;Buffer the cosmap and limbmask
@@ -234,7 +233,7 @@ if woff[0] ne -1 then datdisplay[woff]=mdiparams.nan
 
 ;stop
 ;TEMP!!!!!!!!!!!!!!!!!!!
-if i ge 50 then stop
+;if i ge 50 then stop
 
 endfor
 

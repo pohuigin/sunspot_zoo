@@ -4,8 +4,8 @@ fpathimg='~/science/projects/sunspot_zoo/data_set/all_clear/pngs_fulldisk/'
 
 fpath='~/science/projects/sunspot_zoo/data_set/all_clear/'
 fmeta=fpath+'smart_cutouts_metadata_allclear.txt'
-fpathdata=fpath+'mdi/'
-savcutoutpath=fpath+'sav_cutout/'
+fpathdata=fpath+'nwra_fits/'
+;savcutoutpath=fpath+'sav_cutout/'
 
 fparam='~/science/projects/sunspot_zoo/data_set/ar_param_zooniverse.txt'
 
