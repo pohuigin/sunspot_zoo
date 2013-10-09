@@ -30,8 +30,8 @@ runvers='ALPHA.1.'+time2file(systim(/utc))
 
 ;Buffer size for AR cutouts
 buffval=-9999.
-xbuff=300
-ybuff=300
+xbuff=410
+ybuff=329
 
 
 
@@ -234,7 +234,7 @@ if woff[0] ne -1 then datdisplay[woff]=mdiparams.nan
 
 ;stop
 ;TEMP!!!!!!!!!!!!!!!!!!!
-if i ge 50 then stop
+;if i ge 50 then stop
 
 endfor
 
