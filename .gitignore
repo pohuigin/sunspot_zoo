@@ -1,0 +1,3 @@
+*.fits
+data_set/*
+plots/*
