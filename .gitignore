@@ -1,5 +1,5 @@
 *.fits
 data_set/*
 plots/*
-ssz_setup*
+*ssz_setup*
 run_list_noaa_maxflare.txt
