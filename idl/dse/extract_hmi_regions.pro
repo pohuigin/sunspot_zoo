@@ -63,6 +63,8 @@ pro extract_hmi_regions, date
 		oplot_nar, nar
          	;x2png, 'hmi_int_' + arr2str( nar[ i ].noaa, /trim ) + '_' + date2file( date ) + '.png'
 
+stop
+
 		ans = ''
 		read, 'OK (y/n): ', ans
 

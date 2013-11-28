@@ -52,7 +52,7 @@ for i=0,nar-1 do begin
    mm=strmid(thisnwra,4,2)
 
 ;READ NWRA CUTOUT FILE
-   cutmap=ar_readmag(pathdata+'/'+yyyy+'/'+thisnwra)
+   cutmap=ar_readmag(pathdata+'/'+yyyy+'/'+thisnwra,/mread)
 
 
 ;Determine month and filename of MDI file
