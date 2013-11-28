@@ -1,3 +1,4 @@
+ssz_setup
 *.fits
 data_set/*
 plots/*
