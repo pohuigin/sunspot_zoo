@@ -8,10 +8,14 @@
 pro smart_cutouts_allclear,skip1=skip1,skip2=skip2,skip3=skip3,skip4=skip4,skip5=skip5, $
                         dthresh=dthresh, $
                          pathfits=pathfits,pathpngs=pathpngs, fparam=fparam, $
-                        inmetafile=inmetafile,outmetafile=outmetafile
+                        inmetafile=inmetafile,outmetafile=outmetafile, $
+                           debug=debug,iinit=iinit
+
+if keyword_set(debug) then debug=1 else debug=0
 
 dpathfits='~/science/projects/sunspot_zoo/data_set/all_clear/nwra_fits/'
 dpathpngs='~/science/projects/sunspot_zoo/data_set/all_clear/pngs/'
+dpathmeta='~/science/projects/sunspot_zoo/data_set/all_clear/nwra_meta/'
 dpath='~/science/projects/sunspot_zoo/data_set/all_clear/'
 noaapath='~/science/repositories/smart_library/noaa_srs/'
 pngcutoutpath=dpath+'pngs_cutout/'
@@ -21,12 +25,42 @@ yrarr=['2000','2001','2002','2003','2004','2005']
 nyr=n_elements(yrarr)
 
 fmdi=''
-for k=0,nyr-1 do fmdi=[fmdi,file_search(dpathfits+yrarr[k]+'/'+'*fits*')]
+yesnoc1=-1
+yesnom1=-1
+yesnom5=-1
+noaaall=''
+fnameslist=''
+for k=0,nyr-1 do begin
+
+   readcol,dpathmeta+'eventsC1_24hr'+yrarr[k]+'.txt',dum,thisc1,delim=',',form='A,A'
+   readcol,dpathmeta+'eventsM1_12hr'+yrarr[k]+'.txt',dum,thism1,delim=',',form='A,A'
+   readcol,dpathmeta+'eventsM5_12hr'+yrarr[k]+'.txt',dum,thism5,delim=',',form='A,A'
+   readcol,dpathmeta+'fileSpecs'+yrarr[k]+'.txt',thisspecs,delim='$#',form='A'
+
+   thisnoaaall=strmid(thisspecs,51,100)
+   thisfnames=strmid(thisspecs,0,30)
+
+   yesnoc1=[yesnoc1,thisc1]
+   yesnom1=[yesnom1,thism1]
+   yesnom5=[yesnom5,thism5]
+   noaaall=[noaaall,strtrim(thisnoaaall,2)]
+   fnameslist=[fnameslist,strtrim(thisfnames,2)]
+
+   fmdi=[fmdi,file_search(dpathfits+yrarr[k]+'/'+'*fits*')]
+
+endfor
+
 fmdi=fmdi[1:*]
 nfile=n_elements(fmdi)
 
+yesnoc1=yesnoc1[1:*]
+yesnom1=yesnom1[1:*]
+yesnom5=yesnom5[1:*]
+noaaall=noaaall[1:*]
+fnameslist=fnameslist[1:*]
+
 ;Run version
-runvers='ALPHA.1.'+time2file(systim(/utc))
+runvers='BETA.1.'+time2file(systim(/utc))
 
 ;Buffer size for AR cutouts
 buffval=-9999.
@@ -39,7 +73,7 @@ ybuff=330
 ;nardist=50. ;in arc sec.
 
 ;Output meta data file
-if n_elements(inmetafile) eq 0 then fcsvzoo=dpath+'smart_cutouts_metadata_temp.txt' else fcsvzoo=inmetafile
+if n_elements(inmetafile) eq 0 then fcsvzoo=dpath+'smart_cutouts_metadata_'+strlowcase(runvers)+'.txt' else fcsvzoo=inmetafile
 
 ;+/- Dynamic range for scaling the magnetograms 
 if n_elements(dthresh) ne 1 then magdisplay=1000 else magdisplay=dthresh
@@ -69,16 +103,20 @@ spawn,'echo "#MAGDISPLAY [G]; '+strtrim(magdisplay,2)+'" >> '+fcsvzoo,/sh
 spawn,'echo "#MAGTHRESH [G]; '+strtrim(mdiparams.magthresh,2)+'" >> '+fcsvzoo,/sh
 spawn,'echo "#SMOOTHTHRESH [G]; '+strtrim(mdiparams.smooththresh,2)+'" >> '+fcsvzoo,/sh
 spawn,'echo "#" >> '+fcsvzoo,/sh
-spawn,'echo "#I; I; A; [deg]; [asec]; [px]; A; A; [Mm^2]; F; [Mm^2]; [Mx]; F" >> '+fcsvzoo,/sh
-spawn,'echo "#SSZN; NOAA; N_NAR; FILENAME; DATE; HGPOS; HCPOS; PXPOS; HALE; ZURICH; AREA; AREAFRAC; AREATHESH; FLUX; FLUXFRAC" >> '+fcsvzoo,/sh
+spawn,'echo "#Units:" >> '+fcsvzoo,/sh
+spawn,'echo "#--; --; [number]; --; --; [deg]; [asec]; [px]; --; --; [Mm^2]; [fraction]; [Mm^2]; [Mx]; [fraction]; [deg]; [binary]; [binary]; [binary]; [list];" >> '+fcsvzoo,/sh
+spawn,'echo "#FORMAT; I,I,I,A,A,A,A,A,A,A,F,F,F,F,F,F,I,I,I,A" >> '+fcsvzoo,/sh
+spawn,'echo "#SSZN; NOAA; N_NAR; FILENAME; DATE; HGPOS; HCPOS; PXPOS; HALE; ZURICH; AREA; AREAFRAC; AREATHESH; FLUX; FLUXFRAC; BIPOLESEP; C1FLR24HR; M1FLR12HR; M5FLR12HR; ALLNOAA; " >> '+fcsvzoo,/sh
 
 ;Loop through each cut-out fits file
 
+if n_elements(iinit) ne 1 then iinit=0l else iinit=long(iinit)
+
 ;fmdi=fsmart[wgood]
-for i=0l,nfile-1l do begin
+for i=iinit,nfile-1l do begin
    if file_exist(fmdi[i]) ne 1 then continue
 
-   thismap=ar_readmag(fmdi[i])
+   thismap=ar_readmag(fmdi[i],/mread)
 
    maporig=thismap
 
@@ -162,28 +200,88 @@ for i=0l,nfile-1l do begin
       narmask=maporig
       origsz=size(maporig.data,/dim)
       narmask.data=fltarr(origsz[0],origsz[1])+1.
-      narmask=map_buffer_2d(narmask,value=0,xs=xbuff,ys=ybuff)
+      narmask=map_buffer_2d(narmask,value=0.1,xs=xbuff,ys=ybuff)
 
-      magpropstr=ar_magprop(map=narmap, mask=narmask, cosmap=dsubcos, params=mdiparams)
+      magpropstr=ar_magprop(map=narmap, mask=narmask, cosmap=cosmap, params=mdiparams)
       areafrac=(magpropstr.posareabnd-magpropstr.negareabnd)/magpropstr.areabnd
 
-xy_end=[narmap.index.crpix1,narmap.index.crpix2]
-hglocstr=strjoin(str_sep(xy2hel(xy_end[0],xy_end[1],date=narmap.time),', '),'')
-smart_nsew2hg, hglocstr, hglat, hglon
+;Process mag. for determining positions (get rid of noise, get rid of spikes, NaNs, then do cosine)
+      narposmap=ar_processmag(thismap,/nocosine,/nofilt, params=mdiparams)
+      narposdat=narposmap.data
+      wthreshpos=where(narposdat ge -mdiparams.MDI_NOISETHRESH and narposdat le mdiparams.MDI_NOISETHRESH)
+      if wthreshpos[0] ne -1 then narposdat[wthreshpos]=0
+      narposmap.data=narposdat*cosmap
+      narposmask=narmask & narposmask.data=round(narposmask.data)
+
+;Determine NAR position structure
+      pospropstr=ar_posprop(map=narposmap, mask=narposmask, cosmap=cosmap, params=mdiparams, outpos=pospropstrpos, outneg=pospropstrneg, status=posstatus)
+
+xy_cen=[pospropstr.XCENFLX,pospropstr.YCENFLX]
+hc_cen=[pospropstr.HCXFLX,pospropstr.HCYFLX]
+hg_cen=[pospropstr.HGLONFLX,pospropstr.HGLATFLX]
+
+;xy_end=[narmap.index.crpix1,narmap.index.crpix2]
+;hc_pos=[narmap.index.crval1,narmap.index.crval2]
+;hglocstr=arcmin2hel(hc_pos[0]/60.,hc_pos[1]/60.,date=narmap.time)
+;hglat=hglocstr[0]
+;hglon=hglocstr[1]
+;smart_nsew2hg, hglocstr, hglat, hglon
+
+;Determine the bipole separation distance
+if posstatus eq 1 or posstatus eq 2 or posstatus eq 3 then bipolesep=-1 else $
+   bipolesep=gc_dist([pospropstrpos.HGLONFLX,pospropstrpos.HGLATFLX],[pospropstrneg.HGLONFLX,pospropstrneg.HGLATFLX])
+
 n_noaa=narmap.index.N_NOAA
 noaanum=narmap.index.NOAA_0
 hale=strlowcase(narmap.index.HALE_0)
 mcint=strlowcase(narmap.index.MCINT_0)
 
+if hale eq '' then hale = 'none'
+if mcint eq '' then mcint = 'none'
+
+if debug then begin
+
+   help,magpropstr,/str
+
+   loadct,0
+   plot_map,narposmap,dran=[-500,500],/limb,l_color=255,grid=10
+   setcolors,/sys,/sil
+   xyouts,'0.02','0.02','hgpos = '+strjoin(strtrim(hg_cen,2),','),color=!white,chars=2,/norm
+   xyouts,'0.02','0.06','bipole = '+strjoin(strtrim(bipolesep,2),','),color=!white,chars=2,/norm
+   plots,hc_cen[0],hc_cen[1],ps=4,color=!orange
+   plots,pospropstrpos.hcxFLX,pospropstrpos.HcyFLX,ps=4,color=!red
+   plots,pospropstrneg.hcxFLX,pospropstrneg.HcyFLX,ps=4,color=!green
+
+stop
+
+endif
+
 filename=(reverse(str_sep(fmdi[i],'/')))[0]
+
+;Get region meta info (yes/no flare, all noaa nums, file name list)
+
+wthisfile=where(fnameslist eq filename)
+
+if n_elements(wthisfile) ne 1 or wthisfile[0] eq -1 then begin
+   thisc1='-1'
+   thism1='-1'
+   thism5='-1'
+   thisnoaaall='-1'
+endif else begin
+   thisc1=yesnoc1[wthisfile]
+   thism1=yesnom1[wthisfile]
+   thism5=yesnom5[wthisfile]
+   thisnoaaall=noaaall[wthisfile]
+endelse
 
 ;check for AR complexes with Hale classes
 ;if noaanum gt 1 and hale eq 'beta' then hale='gamma'
 ;if noaanum gt 1 and hale eq 'alpha' then hale='gamma'
 
 ;Enter meta data into CSV file
-;SSZN; NOAA; N_NAR; FILEDATE; DATE; HGPOS; HCPOS; PXPOS; HALE; ZURICH; AREA; AREAFRAC; AREATHESH; FLUX; FLUXFRAC;
-      spawn,'echo "'+string(nzoo,form='(I06)')+';'+strtrim(noaanum,2)+';'+strtrim(n_noaa,2)+';'+strtrim(filename,2)+';'+strtrim(narmap.time,2)+';'+strjoin(strtrim([hglon,hglat],2),',')+';'+strjoin(strtrim(xy_end,2),',')+';'+strjoin(strtrim(xy_end/[narmap.dx,narmap.dy],2),',')+';'+strtrim(hale,2)+';'+strtrim(mcint,2)+';'+strtrim(string(magpropstr.areabnd,form='(E15.2)'),2)+';'+strtrim(string(areafrac,form='(F15.2)'),2)+';'+strtrim(string(magpropstr.totarea,form='(E15.2)'),2)+';'+strtrim(string(magpropstr.totflx,form='(E15.2)'),2)+';'+strtrim(string(magpropstr.frcflx,form='(F15.2)'),2)+'" >> '+fcsvzoo
+;SSZN; NOAA; N_NAR; FILEDATE; DATE; HGPOS; HCPOS; PXPOS; HALE; ZURICH; AREA; AREAFRAC; AREATHESH; FLUX; FLUXFRAC; BIPOLESEP;C1FLR24HR; M1FLR12HR; M5FLR12HR; ALLNOAA;
+;      spawn,'echo "'+string(nzoo,form='(I06)')+';'+strtrim(noaanum,2)+';'+strtrim(n_noaa,2)+';'+strtrim(filename,2)+';'+strtrim(narmap.time,2)+';'+strjoin(strtrim([hglon,hglat],2),',')+';'+strjoin(strtrim(xy_end,2),',')+';'+strjoin(strtrim(xy_end/[narmap.dx,narmap.dy],2),',')+';'+strtrim(hale,2)+';'+strtrim(mcint,2)+';'+strtrim(string(magpropstr.areabnd,form='(E15.2)'),2)+';'+strtrim(string(areafrac,form='(F15.2)'),2)+';'+strtrim(string(magpropstr.totarea,form='(E15.2)'),2)+';'+strtrim(string(magpropstr.totflx,form='(E15.2)'),2)+';'+strtrim(string(magpropstr.frcflx,form='(F15.2)'),2)+'" >> '+fcsvzoo
+      spawn,'echo "'+string(nzoo,form='(I06)')+';'+strtrim(noaanum,2)+';'+strtrim(n_noaa,2)+';'+strtrim(filename,2)+';'+strtrim(narmap.time,2)+';'+strjoin(strtrim(hg_cen,2),',')+';'+strjoin(strtrim(hc_cen,2),',')+';'+strjoin(strtrim(xy_cen,2),',')+';'+strtrim(hale,2)+';'+strtrim(mcint,2)+';'+strtrim(string(magpropstr.areabnd,form='(E15.2)'),2)+';'+strtrim(string(areafrac,form='(F15.2)'),2)+';'+strtrim(string(magpropstr.totarea,form='(E15.2)'),2)+';'+strtrim(string(magpropstr.totflx,form='(E15.2)'),2)+';'+strtrim(string(magpropstr.frcflx,form='(F15.2)'),2)+';'+strtrim(string(bipolesep,form='(F15.2)'),2)+';'+strtrim(thisc1,2)+';'+strtrim(thism1,2)+';'+strtrim(thism5,2)+';'+strtrim(thisnoaaall,2)+'" >> '+fcsvzoo
 
 ;stop
 
