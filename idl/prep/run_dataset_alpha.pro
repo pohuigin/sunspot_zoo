@@ -1,13 +1,13 @@
 pro run_dataset_alpha, docutouts=docutouts, dofulldisk=dofulldisk
 
-fpathimg='~/science/projects/zooniverse/data_set/alpha/pngs_fulldisk/'
+fpathimg='~/science/projects/sunspot_zoo/data_set/alpha/pngs_fulldisk/'
 
-fpath='~/science/projects/zooniverse/data_set/alpha/'
+fpath='~/science/projects/sunspot_zoo/data_set/alpha/'
 fmeta=fpath+'smart_cutouts_metadata_alpha.txt'
-fpathdata=fpath+'fits_jsoc/
+fpathdata=fpath+'fits_jsoc/'
 savcutoutpath=fpath+'sav_cutout/'
 
-fparam='~/science/projects/zooniverse/data_set/ar_param_zooniverse.txt'
+fparam='~/science/projects/sunspot_zoo/data_set/ar_param_zooniverse.txt'
 
 ;Make the cut-outs
 if keyword_set(docutouts) then $

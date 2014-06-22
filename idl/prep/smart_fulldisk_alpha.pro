@@ -26,12 +26,15 @@ wdxpos=(where(strpos(metatxt,'MAPDXDY') ne -1))[0]
 dxdy=metavars[wdxpos]
 dx=str_sep(dxdy,',')
 
-readcol, metafile, sszn,noaa,date,hgpos,hcpos,pxpos,hale,zurich,area,areafrac,areathresh,flux,fluxfrac, delim=';',comment='#',form='A,A,A,A,A,A,A,A,A,A,A,A,A'
+readcol, metafile, sszn,noaa,date,fdate,hgpos,hcpos,pxpos,hale,zurich,area,areafrac,areathresh,flux,fluxfrac, delim=';',comment='#',form='A,A,A,A,A,A,A,A,A,A,A,A,A'
 
 nar=n_elements(pxpos)
 ;spospx=strpos(pxpos,',')
 xypx=fltarr(nar,2)
 xyhc=fltarr(nar,2)
+
+;TEMP!!!!!!!
+;window,xs=700,ys=700
 
 for i=0,nar-1 do begin
 
@@ -48,15 +51,17 @@ for i=0,nar-1 do begin
    imgsz=size(thismap.data,/dim)
 
    thisimg=dpathpngs+'ar_fulldisk_'+string(sszn[i],form='(I06)')
-;      setplotenv,file=thisimg+'.eps',/ps,xs=12,ys=12
-   plot_image,magscl(thismap.data,min=-magdisplay,max=magdisplay,/nobg),xticklen=0.0001,yticklen=0.0001,/iso,position=[0,0,1,1]
+   setplotenv,file=thisimg+'.eps',/ps,xs=12,ys=12
+
+   loadct,0,/silent
+   plot_image,magscl(thismap.data,min=-magdisplay,max=magdisplay,/nobg),xticklen=0.0001,yticklen=0.0001,position=[0,0,1,1]
    draw_circle,imgsz[0]/2.,imgsz[1]/2.,thismap.rsun/thismap.dx,/data,color=255,thick=15
 
    plot_map,thismap,position=[0,0,1,1],xticklen=0.0001,yticklen=0.0001,/nodata,/noerase
 
-stop
-
-   dum=map_contour2xy(narmask, level=0.5, /data, /doplot, /over,color=!gray,thick=10)
+   setcolors,/sys,/sil
+;   dum=map_contour2xy(narmask, level=0.5, /data, /doplot, /over,color=!gray,thick=10)
+   plot_map,narmask,level=[0.5,0.6],color=255,/over,c_thick=5
 
 ; contour,narmask,xy_path,...
 ;oplot the contour, shift by the lwr left hand corner position of the box...
@@ -64,9 +69,10 @@ stop
       vline,[xyhc[i,0]-boxwidth/2.,xyhc[i,0]+boxwidth/2.],yrange=[xyhc[i,1]-boxwidth/2.,xyhc[i,1]+boxwidth/2.],thick=15,color=255
       hline,[xyhc[i,1]-boxwidth/2.,xyhc[i,1]+boxwidth/2.],xrange=[xyhc[i,0]-boxwidth/2.,xyhc[i,0]+boxwidth/2.],thick=15,color=255
 
-;      closeplotenv
 
-stop
+      closeplotenv
+
+;stop
 endfor
 
 
