@@ -1,7 +1,9 @@
 #!/usr/bin/python
-
+import argparse
 import csv
+import json
 import math
+
 
 class Ranking(object):
     def __init__(self):
@@ -9,13 +11,14 @@ class Ranking(object):
         self.images2pair = {}
         self.images = set()
         self.larger = {}
-        self.stronger ={}
+        self.stronger = {}
         self.compacter = {}
         self.complexer = {}
 
-    def insert(self, d, key, value):
+    @staticmethod
+    def insert(d, key, value):
         if not key in d:
-            d[key]= []
+            d[key] = []
         d[key].append(value)
 
     def read_pair2images_csv(self, csvfn):
@@ -33,10 +36,8 @@ class Ranking(object):
                 (p, a, b) = [int(c) for c in row[0:3]]
                 self.images.add(a)
                 self.images.add(b)
-                self.pair2images[p] = (a,b)
-                self.images2pair[(a,b)] = p
-    
-
+                self.pair2images[p] = (a, b)
+                self.images2pair[(a, b)] = p
 
     def read_classification_csv(self, csvfn):
         """
@@ -60,7 +61,6 @@ class Ranking(object):
                 self.insert(self.compacter, p, compacter)
                 self.insert(self.complexer, p, complexer)
 
-
     def get_ranking(self, d):
         """
         d is the ranking information to use (e.g. self.larger)
@@ -69,49 +69,76 @@ class Ranking(object):
             list of image numbers sorted by given ranking information
         """
         def cmp_images(a, b):
-            if (a < b):
+            if a < b:
                 sense = 1
-                ims = (a,b)
+                ims = (a, b)
             else:
                 sense = -1
-                ims = (b,a)
+                ims = (b, a)
                 
             p = self.images2pair[ims]
-            return sense * votes_to_cmp(d[p])
+            try:
+                votes = d[p]
+                return sense * self.votes_to_cmp(votes)
+            except KeyError:
+                return 0
 
         from functools import cmp_to_key
-        l = list(self.images) #unranked list of images
+        l = list(self.images)  # unranked list of images
 
         return sorted(l, key=cmp_to_key(cmp_images))
 
-def votes_to_cmp(l):
-    """
+    def get_rankings(self):
+        return dict((attribute, self.get_ranking(getattr(self, attribute)))
+                    for attribute in ('larger', 'stronger', 'compacter', 'complexer'))
 
-    Arguments
-        l: list of votes e.g. ['A','B','B','-']
+    @staticmethod
+    def votes_to_cmp(l):
+        """
 
-    Return
-        Negative number if mostly 'A'
-        Positive number if mostly 'B'
-        Zero if mostly '-'
-        
-    """
-    count = len(l)
-    total = 0.0
-    for item in l:
-        if item == 'A':
-            total -= 1
-        elif item == 'B':
-            total += 1
-        elif item == '-':
-            pass
-        else:
-            pass
+        Arguments
+            l: list of votes e.g. ['A','B','B','-']
+
+        Return
+            Negative number if mostly 'A'
+            Positive number if mostly 'B'
+            Zero if mostly '-'
+
+        """
+        count = len(l)
+        total = 0.0
+        for item in l:
+            if item == 'A':
+                total -= 1
+            elif item == 'B':
+                total += 1
+            elif item == '-':
+                pass
+            else:
+                pass
+
+        mean = total / count
+        abs_ceil = math.ceil(abs(mean))
+        #print "mean: %f, abs(mean) %f, ceil(abs(mean)) %f" %(mean, abs(mean), abs_ceil)
+
+        return int(math.copysign(abs_ceil, mean))
 
 
-    mean = total / count
-    abs_ceil = math.ceil(abs(mean))
-    #print "mean: %f, abs(mean) %f, ceil(abs(mean)) %f" %(mean, abs(mean), abs_ceil)
+def main():
+    parser = argparse.ArgumentParser(description='Parse Sunspotter data')
+    parser.add_argument('--pairs', dest='pairs', action='store', help='pairs2images CSV file')
+    parser.add_argument('--classifications', dest='rankings', action='store', help='rankings CSV file')
 
-    return int(math.copysign(abs_ceil, mean))
+    args = parser.parse_args()
 
+    ra = Ranking()
+    ra.read_pair2images_csv(args.pairs)
+    ra.read_classification_csv(args.rankings)
+
+    rs = ra.get_rankings()
+
+    print json.dumps(rs, sort_keys=True, separators=(', ', ': '))
+
+
+if __name__ == "__main__":
+    main()
