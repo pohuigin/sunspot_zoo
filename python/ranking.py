@@ -127,13 +127,17 @@ class Ranking(object):
 def main():
     parser = argparse.ArgumentParser(description='Parse Sunspotter data')
     parser.add_argument('--pairs', dest='pairs', action='store', help='pairs2images CSV file')
-    parser.add_argument('--classifications', dest='rankings', action='store', help='rankings CSV file')
+    parser.add_argument('--classifications', dest='classifications', action='store', help='classifications CSV file')
 
     args = parser.parse_args()
 
+    if not (args.pairs and args.classifications):
+        parser.print_help()
+        exit()
+
     ra = Ranking()
     ra.read_pair2images_csv(args.pairs)
-    ra.read_classification_csv(args.rankings)
+    ra.read_classification_csv(args.classifications)
 
     rs = ra.get_rankings()
 
