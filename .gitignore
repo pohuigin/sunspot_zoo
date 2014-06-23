@@ -3,3 +3,4 @@ ssz_setup
 data_set/*
 plots/*
 run_list_noaa_maxflare.txt
+.idea/
